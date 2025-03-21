@@ -54,6 +54,15 @@ def find_edges(models: List[Type[BaseModel]]) -> List[Tuple[str, str, str, str]]
                     print(
                         f"Warning: No target found for field '{fname}' in model '{source}'."
                     )
+            elif fname.endswith("_ids"):
+                target_candidates = [n for n in names if f"{n.lower()}_ids" == fname]
+                if target_candidates:
+                    edges.append((source, fname, target_candidates[0], "references"))
+                else:
+                    print(
+                        f"Warning: No target found for field '{fname}' in model '{source}'."
+                    )
+
             if isinstance(ftype, type) and issubclass(ftype, BaseModel):
                 edges.append((source, fname, ftype.__name__, "contains"))
             elif hasattr(ftype, "__args__") and any(

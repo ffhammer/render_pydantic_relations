@@ -3,7 +3,7 @@ name = "render_pydantic_relations"
 version = "0.1.0"
 description = "Visualize Pydantic model relationships with Graphviz."
 authors = [
-    { name = "Your Name", email = "you@example.com" }
+    { name = "Felix Hammer", email = "fhammer@uos.de" }
 ]
 dependencies = [
     "pydantic>=1.9",
