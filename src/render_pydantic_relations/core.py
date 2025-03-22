@@ -26,9 +26,9 @@ def render_model(model: Type[BaseModel]) -> Digraph:
     for fname, ftype in hints.items():
         label += (
             f"<TR>"
-            f'<TD PORT="{fname}" ALIGN="LEFT">{fname}</TD>'
+            f'<TD ALIGN="LEFT">{fname}</TD>'
             f'<TD BGCOLOR="black" WIDTH="1"></TD>'
-            f'<TD ALIGN="LEFT">{format_type(ftype)}</TD>'
+            f'<TD PORT="{fname}" ALIGN="LEFT">{format_type(ftype)}</TD>'
             f"</TR>"
         )
     label += "</TABLE>>"
@@ -47,7 +47,9 @@ def find_edges(models: List[Type[BaseModel]]) -> List[Tuple[str, str, str, str]]
         hints = get_type_hints(model)
         for fname, ftype in hints.items():
             if fname.endswith("_id"):
-                target_candidates = [n for n in names if f"{n.lower()}_id" == fname]
+                target_candidates = [
+                    n for n in names if fname.endswith(f"{n.lower()}_id")
+                ]
                 if target_candidates:
                     edges.append((source, fname, target_candidates[0], "references"))
                 else:
@@ -55,7 +57,9 @@ def find_edges(models: List[Type[BaseModel]]) -> List[Tuple[str, str, str, str]]
                         f"Warning: No target found for field '{fname}' in model '{source}'."
                     )
             elif fname.endswith("_ids"):
-                target_candidates = [n for n in names if f"{n.lower()}_ids" == fname]
+                target_candidates = [
+                    n for n in names if fname.endswith(f"{n.lower()}_ids")
+                ]
                 if target_candidates:
                     edges.append((source, fname, target_candidates[0], "references"))
                 else:
@@ -79,6 +83,22 @@ def find_edges(models: List[Type[BaseModel]]) -> List[Tuple[str, str, str, str]]
 
 
 def visualize_relationship(models: List[Type[BaseModel]]) -> Digraph:
+    """
+    Visualize relationships between Pydantic models.
+
+    Constructs a Graphviz Digraph where each node represents a Pydantic model.
+    Relationships are determined by two rules:
+      1. Containment: A field whose type is a BaseModel (or a container including a BaseModel)
+         implies the model "contains" that type.
+      2. Reference: A field name ending with "lowername_id" or "lowername_ids" (with lowername being
+         the lower case target model's name) indicates a reference to that target model.
+
+    Args:
+        models: A list of unique Pydantic BaseModel classes.
+
+    Returns:
+        A Graphviz Digraph visualizing the relationships among the provided models.
+    """
     graph = Digraph()
     for model in models:
         graph.subgraph(render_model(model))
@@ -86,7 +106,7 @@ def visualize_relationship(models: List[Type[BaseModel]]) -> Digraph:
         graph.edge(
             source,
             target,
-            tailport=port,
+            tailport=f"{port}:e",
             style="dashed" if rel_label == "references" else "solid",
         )
     return graph
